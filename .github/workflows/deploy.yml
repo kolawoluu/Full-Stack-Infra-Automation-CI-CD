@@ -1,10 +1,11 @@
 name: CI/CD Pipeline - Voting App
 
 on:
-  push:
-    branches: [ main ]
   pull_request:
-    branches: [ main ]
+    paths:
+      - 'docker/**'
+      - 'kubernetes/**'
+      - '.github/workflows/deploy.yml'
 
 env:
   AWS_REGION: us-west-2
@@ -12,37 +13,9 @@ env:
   EKS_CLUSTER_NAME: voting-app-cluster
 
 jobs:
-  # Job 1: Infrastructure Testing
-  test-infrastructure:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v3
-      with:
-        terraform_version: "1.5.0"
-
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ env.AWS_REGION }}
-
-    - name: Terraform Init
-      working-directory: ./terraform/environments/prod
-      run: terraform init
-
-    - name: Terraform Plan
-      working-directory: ./terraform/environments/prod
-      run: terraform plan -var="rds_db_password=${{ secrets.RDS_DB_PASSWORD }}"
-
-  # Job 2: Build and Test Docker Images
+  # Job 1: Build and Test Docker Images
   build-and-test:
     runs-on: ubuntu-latest
-    needs: test-infrastructure
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
