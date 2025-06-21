@@ -53,17 +53,15 @@ jobs:
         run: terraform plan -out=plan.bin
         working-directory: terraform/environments/prod
 
-      - name: Convert plan to json
-        run: terraform show -json plan.bin > plan.json
-        working-directory: terraform/environments/prod
-
-      - name: Infracost
-        uses: infracost/infracost-action@v2
+      - name: Setup Infracost
+        uses: infracost/actions/setup@v2
         with:
-          path: terraform/environments/prod
-          plan_path: terraform/environments/prod/plan.json
-          api_key: ${{ secrets.INFRACOST_API_KEY }}
-          behavior: update
+          api-key: ${{ secrets.INFRACOST_API_KEY }}
+
+      - name: Infracost Estimate
+        run: |
+          infracost breakdown --path=terraform/environments/prod --format=json --out-file=/tmp/infracost.json
+          infracost comment github --path=/tmp/infracost.json --repo=$GITHUB_REPOSITORY --github-token=${{ secrets.GITHUB_TOKEN }} --pull-request=${{ github.event.pull_request.number }} --behavior=update
 
       - name: TFLint
         uses: terraform-linters/setup-tflint@v4
