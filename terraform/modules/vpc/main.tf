@@ -24,7 +24,6 @@ resource "aws_internet_gateway" "main" {
   }
 }
 
-# tfsec:ignore:aws-ec2-no-public-ip-subnet Until 2026-07-31 Subnet is intentionally public for NAT gateways and LBs.
 # Public Subnets
 resource "aws_subnet" "public" {
   count             = length(var.public_subnets)
@@ -32,7 +31,7 @@ resource "aws_subnet" "public" {
   cidr_block        = var.public_subnets[count.index]
   availability_zone = var.availability_zones[count.index]
 
-  map_public_ip_on_launch = true
+  map_public_ip_on_launch = true # tfsec:ignore:aws-ec2-no-public-ip-subnet Until 2026-07-31 # This is a public subnet used for resources like LBs and NAT Gateways.
 
   tags = {
     Name        = "${var.project_name}-public-subnet-${count.index + 1}"
