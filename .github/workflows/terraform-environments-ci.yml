@@ -10,6 +10,9 @@ jobs:
   terraform-environments:
     name: Terraform Environments Dry Run
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
 
     steps:
       - name: Checkout code
@@ -45,10 +48,22 @@ jobs:
         run: terraform validate
         working-directory: terraform/environments/prod
 
-      - name: Terraform Plan (Dry Run)
-        run: terraform plan -detailed-exitcode
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -out=plan.bin
         working-directory: terraform/environments/prod
-        continue-on-error: true
+
+      - name: Convert plan to json
+        run: terraform show -json plan.bin > plan.json
+        working-directory: terraform/environments/prod
+
+      - name: Infracost
+        uses: infracost/infracost-action@v2
+        with:
+          path: terraform/environments/prod
+          plan_path: terraform/environments/prod/plan.json
+          api_key: ${{ secrets.INFRACOST_API_KEY }}
+          behavior: update
 
       - name: TFLint
         uses: terraform-linters/setup-tflint@v4
