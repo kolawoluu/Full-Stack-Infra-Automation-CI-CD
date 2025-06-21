@@ -1,0 +1,66 @@
+name: Terraform Environments CI
+
+on:
+  pull_request:
+    paths:
+      - 'terraform/environments/**'
+      - '.github/workflows/terraform-environments-ci.yml'
+
+jobs:
+  terraform-environments:
+    name: Terraform Environments Dry Run
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract AWS Region
+        id: aws-region
+        run: |
+          REGION=$(grep -A 1 'variable "aws_region"' terraform/environments/prod/variables.tf | grep 'default' | sed 's/.*default.*=.*"\([^"]*\)".*/\1/')
+          echo "region=$REGION" >> $GITHUB_OUTPUT
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ steps.aws-region.outputs.region }}
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.5.0'
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+        working-directory: terraform/environments/prod
+
+      - name: Terraform Init
+        run: terraform init
+        working-directory: terraform/environments/prod
+
+      - name: Terraform Validate
+        run: terraform validate
+        working-directory: terraform/environments/prod
+
+      - name: Terraform Plan (Dry Run)
+        run: terraform plan -detailed-exitcode
+        working-directory: terraform/environments/prod
+        continue-on-error: true
+
+      - name: TFLint
+        uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: v0.48.0
+
+      - name: TFLint Check
+        run: tflint --init && tflint
+        working-directory: terraform/environments/prod
+
+      - name: tfsec (Security Scanning)
+        uses: aquasecurity/tfsec-action@v1.0.0
+        with:
+          working_directory: terraform/environments/prod
+          additional_args: "--minimum-severity=HIGH" 

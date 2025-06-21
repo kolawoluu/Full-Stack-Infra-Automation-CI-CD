@@ -1,0 +1,40 @@
+name: Terraform Modules CI
+
+on:
+  pull_request:
+    paths:
+      - 'terraform/modules/**'
+      - '.github/workflows/terraform-modules-ci.yml'
+
+jobs:
+  terraform-modules:
+    name: Terraform Modules Static Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.5.0'
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+        working-directory: terraform/modules
+
+      - name: TFLint
+        uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: v0.48.0
+
+      - name: TFLint Check
+        run: tflint --init && tflint
+        working-directory: terraform/modules
+
+      - name: tfsec (Security Scanning)
+        uses: aquasecurity/tfsec-action@v1.0.0
+        with:
+          working_directory: terraform/modules
+          additional_args: "--minimum-severity=HIGH" 
