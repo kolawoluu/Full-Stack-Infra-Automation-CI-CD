@@ -4,33 +4,30 @@
 
 This directory contains the complete Infrastructure as Code (IaC) setup for the Full-Stack Infrastructure Automation & CI/CD project. The infrastructure is built using Terraform and deployed on AWS, featuring a production-ready architecture with proper security, scalability, and monitoring capabilities.
 
-## 🔄 CI/CD Workflow
+## 🔄 CI/CD Workflows
 
-This project includes automated CI/CD checks that run on every pull request to ensure code quality, security, and compliance:
+This project includes a sophisticated, multi-faceted CI process that runs on every pull request to ensure code quality, security, compliance, and cost-effectiveness. The pipeline is split into two distinct, targeted workflows:
 
-### Automated Checks
+### 1. Module Development Workflow (`terraform-modules-ci.yml`)
+This workflow focuses on the quality and security of the reusable Terraform modules. It runs whenever changes are made to the `terraform/modules/` directory.
 
-- **Terraform Format Check**: Ensures consistent code formatting
-- **Terraform Validate**: Validates syntax and configuration
-- **Terraform Plan**: Performs a dry-run to catch potential issues
-- **Security Scanning (tfsec)**: Identifies security vulnerabilities
-- **Compliance Checks (Checkov)**: Ensures best practices and compliance
+- **`terraform fmt`**: Ensures consistent code formatting.
+- **`tflint`**: Lints the code for best practices, provider-specific issues, and potential errors.
+- **`tfsec`**: Scans the code for security vulnerabilities and misconfigurations.
 
-### Workflow Triggers
+### 2. Environment Deployment Workflow (`terraform-environments-ci.yml`)
+This workflow validates the end-to-end deployment for a specific environment (e.g., `prod`). It runs whenever changes are made to the `terraform/environments/` directory.
 
-The CI/CD workflow automatically runs when:
-- A pull request is opened or updated
-- Changes are made to files in the `terraform/` directory
-- The workflow file itself is modified
+- **`terraform fmt`**: Ensures consistent code formatting.
+- **`terraform init & validate`**: Checks for syntax errors and ensures the configuration is valid.
+- **`terraform plan`**: Performs a dry run to generate a speculative execution plan. This step requires AWS credentials.
+- **`infracost`**: Analyzes the Terraform plan to provide a detailed cost breakdown, which is posted as a PR comment. This prevents budget overruns.
+- **`tflint`**: Lints the environment-specific configuration.
+- **`tfsec`**: Scans the final plan for any security issues before deployment.
 
 ### Required Status Checks
 
-All checks must pass before a pull request can be merged to main:
-- ✅ Terraform format validation
-- ✅ Terraform syntax validation  
-- ✅ Terraform plan execution
-- ✅ Security scan results
-- ✅ Compliance check results
+All checks must pass before a pull request can be merged into `main`, providing a robust quality gate.
 
 ## 🏛️ Architecture Overview
 
