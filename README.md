@@ -58,14 +58,14 @@ For detailed technical documentation, including diagrams and deployment instruct
 ## 🎯 Portfolio Highlights
 
 This project demonstrates:
-- ✅ **Infrastructure as Code** with Terraform
-- ✅ **Container Orchestration** with Kubernetes
-- ✅ **CI/CD Automation** with GitHub Actions
-- ✅ **Monitoring & Observability** with Prometheus/Grafana
-- ✅ **Security Best Practices** with RBAC and network policies
-- ✅ **GitOps** principles (optional with ArgoCD)
-- ✅ **Multi-environment** deployment strategy
-- ✅ **Production-ready** architecture
+- ✅ **Infrastructure as Code** with Terraform modules
+- ✅ **Advanced CI/CD Pipeline** with GitHub Actions
+- ✅ **Security-First Approach** with automated scanning and validation
+- ✅ **Cost Transparency** with automated cost estimation
+- ✅ **Production-Grade Safety** with Plan on PR, Apply on Merge strategy
+- ✅ **Modular Architecture** with reusable Terraform components
+- ✅ **AWS Best Practices** with VPC, EKS, and RDS
+- ✅ **GitOps Principles** with infrastructure as code
 
 ## 📝 License
 
