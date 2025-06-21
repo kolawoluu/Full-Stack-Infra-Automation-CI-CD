@@ -30,10 +30,20 @@ resource "aws_eks_cluster" "main" {
   role_arn = aws_iam_role.eks_cluster.arn
   version  = var.kubernetes_version
 
+  dynamic "encryption_config" {
+    for_each = var.kms_key_arn != "" ? [1] : []
+    content {
+      provider {
+        key_arn = var.kms_key_arn
+      }
+      resources = ["secrets"]
+    }
+  }
+
   vpc_config {
     subnet_ids              = var.subnet_ids
     endpoint_private_access = true
-    endpoint_public_access  = true
+    endpoint_public_access  = false
     security_group_ids      = [aws_security_group.eks_cluster.id]
   }
 
@@ -98,7 +108,7 @@ resource "aws_security_group" "eks_cluster" {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = ["0.0.0.0/0"] # tfsec:ignore:aws-ec2-no-public-egress-sgr Until 2026-07-31 # Egress is required for nodes to pull public container images.
   }
 
   tags = {

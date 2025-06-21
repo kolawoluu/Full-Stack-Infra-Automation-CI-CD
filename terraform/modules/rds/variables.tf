@@ -80,4 +80,10 @@ variable "deletion_protection" {
   description = "Enable deletion protection"
   type        = bool
   default     = true
+}
+
+variable "performance_insights_kms_key_id" {
+  description = "The ARN for the KMS key to encrypt Performance Insights data."
+  type        = string
+  default     = null
 } 
