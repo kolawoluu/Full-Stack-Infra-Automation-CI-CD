@@ -2,34 +2,33 @@
 
 ## 🏗️ Overview
 
-This directory contains the complete Infrastructure as Code (IaC) setup for the Full-Stack Infrastructure Automation & CI/CD project. The infrastructure is built using Terraform and deployed on AWS, featuring a production-ready architecture with proper security, scalability, and monitoring capabilities.
+This directory contains the complete Infrastructure as Code (IaC) setup for the project. The infrastructure is built using Terraform and deployed on AWS, featuring a production-ready architecture with proper security, scalability, and modularity.
 
 ## 🔄 CI/CD Workflows
 
-This project includes a sophisticated, multi-faceted CI process that runs on every pull request to ensure code quality, security, compliance, and cost-effectiveness. The pipeline is split into two distinct, targeted workflows:
+This project includes a sophisticated, multi-faceted CI process that runs on every pull request to ensure code quality, security, compliance, and cost-effectiveness. The pipeline is split into distinct, targeted workflows based on the path of the changes.
 
 ### 1. Module Development Workflow (`terraform-modules-ci.yml`)
-This workflow focuses on the quality and security of the reusable Terraform modules. It runs whenever changes are made to the `terraform/modules/` directory.
+This workflow focuses on the quality and security of the reusable Terraform modules. It runs whenever changes are made to the `terraform/modules/` directory and performs static analysis, requiring no cloud credentials.
 
 - **`terraform fmt`**: Ensures consistent code formatting.
-- **`tflint`**: Lints the code for best practices, provider-specific issues, and potential errors.
-- **`tfsec`**: Scans the code for security vulnerabilities and misconfigurations.
+- **`tflint`**: Lints the code for best practices and potential errors.
+- **`tfsec`**: Scans the code for security vulnerabilities.
 
-### 2. Environment Deployment Workflow (`terraform-environments-ci.yml`)
-This workflow validates the end-to-end deployment for a specific environment (e.g., `prod`). It runs whenever changes are made to the `terraform/environments/` directory.
+### 2. Environment Plan Workflow (`terraform-plan.yml`)
+This workflow validates an end-to-end deployment plan when a pull request targets a specific environment (e.g., `prod`). It provides a comprehensive, read-only preview of the proposed changes.
 
-- **`terraform fmt`**: Ensures consistent code formatting.
-- **`terraform init & validate`**: Checks for syntax errors and ensures the configuration is valid.
-- **`terraform plan`**: Performs a dry run to generate a speculative execution plan. This step requires AWS credentials.
-- **`infracost`**: Analyzes the Terraform plan to provide a detailed cost breakdown, which is posted as a PR comment. This prevents budget overruns.
-- **`tflint`**: Lints the environment-specific configuration.
-- **`tfsec`**: Scans the final plan for any security issues before deployment.
+- **`terraform plan`**: Performs a dry run to generate a speculative execution plan.
+- **`infracost`**: Analyzes the plan to provide a detailed cost breakdown in a PR comment.
 
-### Required Status Checks
+### 3. Environment Apply Workflow (`terraform-apply.yml`)
+This workflow triggers only when a pull request to an environment branch is merged. It takes the approved plan and applies it to the live AWS environment.
 
-All checks must pass before a pull request can be merged into `main`, providing a robust quality gate.
+- **`terraform apply`**: Reconciles the live infrastructure with the desired state in the `main` branch.
 
-## 🏛️ Architecture Overview
+## 🏛️ Infrastructure Architecture
+
+The AWS infrastructure is designed to provide a secure and scalable foundation for a typical three-tier application.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────┐
@@ -42,16 +41,6 @@ All checks must pass before a pull request can be merged into `main`, providing 
 │  │  ┌─────────────────┐                    ┌─────────────────┐            │   │
 │  │  │   Public AZ-A   │                    │   Public AZ-B   │            │   │
 │  │  │  (10.0.1.0/24)  │                    │  (10.0.2.0/24)  │            │   │
-│  │  │                 │                    │                 │            │   │
-│  │  │ ┌─────────────┐ │                    │ ┌─────────────┐ │            │   │
-│  │  │ │   Internet  │ │                    │ │   Internet  │ │            │   │
-│  │  │ │   Gateway   │ │                    │ │   Gateway   │ │            │   │
-│  │  │ └─────────────┘ │                    │ └─────────────┘ │            │   │
-│  │  │                 │                    │                 │            │   │
-│  │  │ ┌─────────────┐ │                    │ ┌─────────────┐ │            │   │
-│  │  │ │   NAT       │ │                    │ │   NAT       │ │            │   │
-│  │  │ │  Gateway    │ │                    │ │  Gateway    │ │            │   │
-│  │  │ └─────────────┘ │                    │ └─────────────┘ │            │   │
 │  │  └─────────────────┘                    └─────────────────┘            │   │
 │  │                                                                         │   │
 │  │  ┌─────────────────┐                    ┌─────────────────┐            │   │
@@ -67,91 +56,10 @@ All checks must pass before a pull request can be merged into `main`, providing 
 │  │  │ ┌─────────────┐ │                    │ ┌─────────────┐ │            │   │
 │  │  │ │    RDS      │ │                    │ │    RDS      │ │            │   │
 │  │  │ │ PostgreSQL  │ │                    │ │ PostgreSQL  │ │            │   │
-│  │  │ │  (Primary)  │ │                    │ │ (Read Rep.) │ │            │   │
 │  │  │ └─────────────┘ │                    │ └─────────────┘ │            │   │
 │  │  └─────────────────┘                    └─────────────────┘            │   │
 │  └─────────────────────────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────────────────────┘
-```
-
-## 🔄 Network Communication Flow
-
-### Internet to Application Flow
-
-```
-Internet User
-    │
-    ▼
-┌─────────────┐
-│   Internet  │
-│   Gateway   │
-└─────────────┘
-    │
-    ▼
-┌─────────────┐
-│   Public    │
-│   Subnets   │
-│ (AZ-A/B)    │
-└─────────────┘
-    │
-    ▼
-┌─────────────┐
-│   Private   │
-│   Subnets   │
-│ (AZ-A/B)    │
-└─────────────┘
-    │
-    ▼
-┌─────────────┐
-│   EKS Pods  │
-│ (Vote/Result)│
-└─────────────┘
-```
-
-### Application to Database Flow
-
-```
-EKS Pods (Vote/Result/Worker)
-    │
-    ▼
-┌─────────────┐
-│   Security  │
-│   Groups    │
-│ (Port 5432) │
-└─────────────┘
-    │
-    ▼
-┌─────────────┐
-│   RDS       │
-│ PostgreSQL  │
-│ (Private)   │
-└─────────────┘
-```
-
-### Internal Service Communication
-
-```
-┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│   Vote      │───▶│   Worker    │───▶│   Result    │
-│  Frontend   │    │   Service   │    │  Frontend   │
-│             │    │             │    │             │
-│ • User      │    │ • Process   │    │ • Display   │
-│   Input     │    │   Votes     │    │   Results   │
-│ • Send      │    │ • Database  │    │ • Read      │
-│   Data      │    │   Updates   │    │   Data      │
-└─────────────┘    └─────────────┘    └─────────────┘
-       │                   │                   │
-       └───────────────────┼───────────────────┘
-                           ▼
-                   ┌─────────────┐
-                   │   RDS       │
-                   │ PostgreSQL  │
-                   │             │
-                   │ • Store     │
-                   │   Votes     │
-                   │ • Retrieve  │
-                   │   Results   │
-                   └─────────────┘
 ```
 
 ## 🛠️ Module Structure
@@ -261,26 +169,6 @@ aws eks update-kubeconfig --region us-west-2 --name voting-app-cluster
 kubectl get nodes
 ```
 
-## 📊 Monitoring and Observability
-
-### Infrastructure Metrics
-
-- **VPC**: Subnet utilization, NAT Gateway metrics
-- **EKS**: Cluster health, node metrics, pod metrics
-- **RDS**: Database performance, connection count, storage usage
-
-### Application Metrics
-
-- **Vote Service**: Request rate, response time, error rate
-- **Result Service**: Request rate, response time, error rate
-- **Worker Service**: Processing rate, queue depth, error rate
-
-### Security Monitoring
-
-- **Network**: Security group rule changes, unauthorized access attempts
-- **IAM**: Role usage, permission changes, access patterns
-- **RDS**: Failed login attempts, SSL connections, encryption status
-
 ## 🔧 Troubleshooting
 
 ### Common Issues
@@ -337,7 +225,3 @@ terraform destroy -var="rds_db_password=your-secure-password"
 - [VPC Best Practices](https://docs.aws.amazon.com/vpc/latest/userguide/vpc-security-best-practices.html)
 
 ---
-
-**Last Updated**: December 2024  
-**Terraform Version**: >= 1.0  
-**AWS Provider Version**: ~> 5.0 

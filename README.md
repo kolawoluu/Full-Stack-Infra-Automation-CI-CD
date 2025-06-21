@@ -1,159 +1,59 @@
-# Full-Stack Infrastructure Automation & CI/CD Pipeline
+# Production-Grade Terraform & CI/CD
 
 ## 🎯 Project Overview
 
-This project demonstrates a complete DevOps implementation of a 3-tier production-grade infrastructure using the Docker Voting App. It showcases modern DevOps practices including Infrastructure as Code, Kubernetes orchestration, CI/CD automation, monitoring, and security hardening.
+This repository is a showcase of a production-grade Infrastructure as Code (IaC) setup using Terraform and GitHub Actions. It demonstrates how to build, test, and deploy a secure and modular AWS infrastructure while adhering to modern DevOps best practices for automation, governance, and safety.
 
-## 🏗️ Architecture
+The core of this project is not just the infrastructure itself, but the sophisticated CI/CD pipeline that manages it. This pipeline is designed to provide high confidence and a strong safety net for every proposed infrastructure change.
 
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Frontend      │    │   Backend       │    │   Database      │
-│   (Vote App)    │◄──►│   (Vote API)    │◄──►│   (PostgreSQL)  │
-│   Port: 80      │    │   Port: 5000    │    │   Port: 5432    │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         ▼                       ▼                       ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    Kubernetes (EKS)                            │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐            │
-│  │   Ingress   │  │  Prometheus │  │   Grafana   │            │
-│  │ Controller  │  │  Monitoring │  │  Dashboards │            │
-│  └─────────────┘  └─────────────┘  └─────────────┘            │
-└─────────────────────────────────────────────────────────────────┘
-         │
-         ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    AWS Infrastructure                          │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐            │
-│  │     VPC     │  │     EKS     │  │     RDS     │            │
-│  │   Subnets   │  │   Cluster   │  │ PostgreSQL  │            │
-│  └─────────────┘  └─────────────┘  └─────────────┘            │
-└─────────────────────────────────────────────────────────────────┘
-```
+## 🏛️ Infrastructure Architecture
 
-## 🛠️ Technology Stack
+The infrastructure is deployed on AWS and consists of a standard three-tier architecture foundation, ready to host containerized applications:
 
-### Infrastructure
-- **Terraform** - Infrastructure as Code
-- **AWS** - Cloud provider (VPC, EKS, RDS, EC2)
-- **Kubernetes (EKS)** - Container orchestration
+- **Networking**: A custom Virtual Private Cloud (VPC) with public and private subnets across multiple availability zones.
+- **Compute**: An Elastic Kubernetes Service (EKS) cluster for container orchestration.
+- **Database**: A PostgreSQL database instance using AWS Relational Database Service (RDS).
 
-### Application
-- **Docker** - Containerization
-- **Docker Voting App** - Sample application
-- **PostgreSQL** - Database
+All components are defined as reusable modules, promoting consistency and maintainability.
 
-### CI/CD & DevOps
-- **GitHub Actions** - CI/CD pipeline
-- **Helm** - Kubernetes package manager
-- **ArgoCD** - GitOps (Optional)
+## 🔄 The CI/CD Lifecycle: Plan on PR, Apply on Merge
 
-### Monitoring & Security
-- **Prometheus** - Metrics collection
-- **Grafana** - Visualization
-- **Alertmanager** - Alerting
-- **RBAC** - Role-based access control
-- **Network Policies** - Security
+This project implements the industry-standard "Plan on Pull Request, Apply on Merge" strategy, creating a clear separation between proposing a change and enacting it.
+
+### On Pull Request: The "What-If" Analysis
+When a pull request is opened to change the infrastructure configuration in `terraform/environments/prod/`, a **`terraform-plan.yml`** workflow triggers to perform a comprehensive, read-only analysis. It answers the question: "What would happen if we merge this?"
+
+- ✅ **`terraform plan`**: Generates a dry-run execution plan.
+- ✅ **`tflint` & `tfsec`**: Lints the code and scans for security vulnerabilities.
+- ✅ **`infracost`**: Posts a comment on the PR with a detailed breakdown of the monthly cost changes.
+
+No infrastructure is ever changed at this stage.
+
+### On Merge to `main`: The Source of Truth
+The `main` branch is the source of truth for the production environment. A merge to `main` signifies that the proposed changes have been reviewed and approved.
+
+- **`terraform-apply.yml`**: This workflow triggers automatically on a push to `main`. Its sole purpose is to run `terraform apply -auto-approve`, reconciling the live infrastructure with the desired state defined in the codebase.
 
 ## 📁 Project Structure
 
+The project is organized for clarity and scalability:
+
 ```
-├── terraform/                 # Infrastructure as Code
+├── terraform/
 │   ├── modules/
-│   │   ├── vpc/              # VPC, subnets, gateways
-│   │   ├── eks/              # EKS cluster configuration
-│   │   └── rds/              # PostgreSQL database
+│   │   ├── vpc/
+│   │   ├── eks/
+│   │   └── rds/
 │   └── environments/
-│       └── prod/             # Production environment
-├── kubernetes/               # Kubernetes manifests
-│   ├── namespaces/           # Namespace definitions
-│   ├── deployments/          # Application deployments
-│   ├── services/             # Service definitions
-│   └── ingress/              # Ingress configurations
-├── docker/                   # Docker configurations
-│   ├── voting-app/           # Voting application
-│   └── docker-compose.yml    # Local development
-├── monitoring/               # Monitoring stack
-│   ├── prometheus/           # Prometheus configuration
-│   └── grafana/              # Grafana dashboards
-├── .github/                  # GitHub Actions workflows
-│   └── workflows/
-└── docs/                     # Documentation
+│       └── prod/
+└── .github/
+    └── workflows/
+        ├── terraform-modules-ci.yml  # Static analysis for modules
+        ├── terraform-plan.yml        # PR validation and planning
+        └── terraform-apply.yml       # Production deployment on merge
 ```
 
-## 🚀 Quick Start
-
-### Prerequisites
-- AWS CLI configured
-- Terraform >= 1.0
-- kubectl
-- Docker
-- Helm
-
-### Deployment Steps
-
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd Full-Stack-Infra-Automation-CI-CD
-   ```
-
-2. **Deploy Infrastructure**
-   ```bash
-   cd terraform/environments/prod
-   terraform init
-   terraform plan
-   terraform apply
-   ```
-
-3. **Configure kubectl**
-   ```bash
-   aws eks update-kubeconfig --region us-west-2 --name voting-app-cluster
-   ```
-
-4. **Deploy Application**
-   ```bash
-   kubectl apply -f kubernetes/namespaces/
-   kubectl apply -f kubernetes/deployments/
-   kubectl apply -f kubernetes/services/
-   kubectl apply -f kubernetes/ingress/
-   ```
-
-5. **Deploy Monitoring**
-   ```bash
-   helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-   helm install prometheus prometheus-community/kube-prometheus-stack -n monitoring
-   ```
-
-## 📊 Monitoring & Observability
-
-- **Grafana Dashboards**: Application metrics, Kubernetes cluster health
-- **Prometheus**: Metrics collection and alerting
-- **Alertmanager**: Notifications for critical events
-
-## 🔐 Security Features
-
-- **RBAC**: Role-based access control
-- **Network Policies**: Pod-to-pod communication restrictions
-- **Secrets Management**: Kubernetes secrets for sensitive data
-- **IAM Roles**: Least privilege access for AWS resources
-
-## 🧪 Testing
-
-- **Infrastructure Testing**: Terraform plan/apply validation
-- **Application Testing**: Docker container health checks
-- **Integration Testing**: End-to-end application flow
-- **Security Testing**: Network policy validation
-
-## 📈 CI/CD Pipeline
-
-The GitHub Actions workflow automatically:
-1. Lints and tests code
-2. Builds Docker images
-3. Pushes to container registry
-4. Deploys to Kubernetes
-5. Runs post-deployment tests
+For detailed technical documentation, including diagrams and deployment instructions, please see the [Terraform README](./terraform/README.md).
 
 ## 🎯 Portfolio Highlights
 
