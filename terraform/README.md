@@ -4,6 +4,34 @@
 
 This directory contains the complete Infrastructure as Code (IaC) setup for the Full-Stack Infrastructure Automation & CI/CD project. The infrastructure is built using Terraform and deployed on AWS, featuring a production-ready architecture with proper security, scalability, and monitoring capabilities.
 
+## 🔄 CI/CD Workflow
+
+This project includes automated CI/CD checks that run on every pull request to ensure code quality, security, and compliance:
+
+### Automated Checks
+
+- **Terraform Format Check**: Ensures consistent code formatting
+- **Terraform Validate**: Validates syntax and configuration
+- **Terraform Plan**: Performs a dry-run to catch potential issues
+- **Security Scanning (tfsec)**: Identifies security vulnerabilities
+- **Compliance Checks (Checkov)**: Ensures best practices and compliance
+
+### Workflow Triggers
+
+The CI/CD workflow automatically runs when:
+- A pull request is opened or updated
+- Changes are made to files in the `terraform/` directory
+- The workflow file itself is modified
+
+### Required Status Checks
+
+All checks must pass before a pull request can be merged to main:
+- ✅ Terraform format validation
+- ✅ Terraform syntax validation  
+- ✅ Terraform plan execution
+- ✅ Security scan results
+- ✅ Compliance check results
+
 ## 🏛️ Architecture Overview
 
 ```
@@ -313,6 +341,6 @@ terraform destroy -var="rds_db_password=your-secure-password"
 
 ---
 
-**Last Updated**: July 2025  
+**Last Updated**: December 2024  
 **Terraform Version**: >= 1.0  
 **AWS Provider Version**: ~> 5.0 
