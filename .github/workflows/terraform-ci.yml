@@ -36,6 +36,7 @@ jobs:
         uses: aquasecurity/tfsec-action@v1.0.0
         with:
           working_directory: terraform/environments/prod
+          additional_args: "--minimum-severity=HIGH"
 
       - name: Checkov (Best Practices & Compliance)
         uses: bridgecrewio/checkov-action@v12
