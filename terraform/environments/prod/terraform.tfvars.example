@@ -1,0 +1,33 @@
+# Example terraform.tfvars file for production environment
+# Copy this file to terraform.tfvars and fill in your values
+
+# AWS Configuration
+aws_region = "us-west-2"
+
+# Project Configuration
+project_name = "voting-app"
+environment   = "prod"
+
+# VPC Configuration
+vpc_cidr = "10.0.0.0/16"
+public_subnets  = ["10.0.1.0/24", "10.0.2.0/24"]
+private_subnets = ["10.0.11.0/24", "10.0.12.0/24"]
+availability_zones = ["us-west-2a", "us-west-2b"]
+
+# EKS Configuration
+kubernetes_version = "1.28"
+eks_instance_types = ["t3.medium"]
+eks_desired_size   = 2
+eks_max_size       = 4
+eks_min_size       = 1
+
+# RDS Configuration
+rds_engine_version        = "14.10"
+rds_instance_class        = "db.t3.micro"
+rds_allocated_storage     = 20
+rds_max_allocated_storage = 100
+rds_db_name               = "votingapp"
+rds_db_username           = "postgres"
+rds_db_password           = "your-secure-password-here"  # Change this!
+rds_backup_retention_period = 7
+rds_deletion_protection   = true 
