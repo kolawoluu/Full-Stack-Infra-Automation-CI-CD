@@ -78,11 +78,12 @@ jobs:
     - name: Update kubeconfig
       run: aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ env.EKS_CLUSTER_NAME }}
 
-    - name: Deploy Infrastructure
-      working-directory: ./terraform/environments/prod
+    - name: Get RDS Password from Secrets Manager
+      id: get-db-password
       run: |
-        terraform init
-        terraform apply -auto-approve -var="rds_db_password=${{ secrets.RDS_DB_PASSWORD }}"
+        SECRET_ARN=$(terraform -chdir=./terraform/environments/prod output -raw db_master_user_secret_arn)
+        PASSWORD=$(aws secretsmanager get-secret-value --secret-id $SECRET_ARN --query SecretString --output text | jq -r .password)
+        echo "db_password=$PASSWORD" >> $GITHUB_OUTPUT
 
     - name: Create Kubernetes secrets
       run: |
