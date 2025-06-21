@@ -18,7 +18,7 @@ jobs:
       - name: Extract AWS Region
         id: aws-region
         run: |
-          REGION=$(grep -A 1 'variable "aws_region"' terraform/environments/prod/variables.tf | grep 'default' | sed 's/.*default.*=.*"\([^"]*\)".*/\1/')
+          REGION=$(awk '/variable "aws_region"/,/\}/' terraform/environments/prod/variables.tf | grep 'default' | cut -d '"' -f 2)
           echo "region=$REGION" >> $GITHUB_OUTPUT
 
       - name: Configure AWS Credentials
