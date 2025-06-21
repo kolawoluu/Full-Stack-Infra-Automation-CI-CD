@@ -32,6 +32,15 @@ jobs:
         run: terraform validate
         working-directory: terraform/environments/prod
 
+      - name: TFLint
+        uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: v0.48.0
+
+      - name: TFLint Check
+        run: tflint --init && tflint
+        working-directory: terraform/environments/prod
+
       - name: tfsec (Security Scanning)
         uses: aquasecurity/tfsec-action@v1.0.0
         with:
