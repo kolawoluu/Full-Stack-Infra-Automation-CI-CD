@@ -39,6 +39,7 @@ resource "aws_db_parameter_group" "main" {
   }
 }
 
+# tfsec:ignore:aws-ec2-no-public-egress-sgr Until 2026-07-31 Egress to internet is required for RDS enhanced monitoring and other AWS services.
 # RDS Security Group
 resource "aws_security_group" "rds" {
   name_prefix = "${var.project_name}-rds-"
@@ -102,6 +103,7 @@ resource "aws_db_instance" "main" {
 
   # Performance Insights
   performance_insights_enabled          = true
+  performance_insights_kms_key_id       = var.performance_insights_kms_key_id
   performance_insights_retention_period = 7
 
   # Parameter group

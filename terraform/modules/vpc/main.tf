@@ -24,6 +24,7 @@ resource "aws_internet_gateway" "main" {
   }
 }
 
+# tfsec:ignore:aws-ec2-no-public-ip-subnet Until 2026-07-31 Subnet is intentionally public for NAT gateways and LBs.
 # Public Subnets
 resource "aws_subnet" "public" {
   count             = length(var.public_subnets)

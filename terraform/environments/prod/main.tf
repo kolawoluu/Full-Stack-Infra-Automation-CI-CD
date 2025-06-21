@@ -41,6 +41,17 @@ module "vpc" {
   availability_zones = var.availability_zones
 }
 
+# KMS Key for Encryption
+resource "aws_kms_key" "main" {
+  description             = "KMS key for encrypting EKS secrets and RDS data"
+  deletion_window_in_days = 7
+  enable_key_rotation     = true
+
+  tags = {
+    Name = "${var.project_name}-kms-key"
+  }
+}
+
 # EKS Module
 module "eks" {
   source = "../../modules/eks"
@@ -55,6 +66,7 @@ module "eks" {
   desired_size       = var.eks_desired_size
   max_size           = var.eks_max_size
   min_size           = var.eks_min_size
+  kms_key_arn        = aws_kms_key.main.arn
 
   depends_on = [module.vpc]
 }
@@ -77,6 +89,7 @@ module "rds" {
   db_password                = var.rds_db_password
   backup_retention_period    = var.rds_backup_retention_period
   deletion_protection        = var.rds_deletion_protection
+  performance_insights_kms_key_id = aws_kms_key.main.arn
 
   depends_on = [module.vpc, module.eks]
 } 

@@ -55,4 +55,10 @@ variable "min_size" {
   description = "Minimum number of worker nodes"
   type        = number
   default     = 1
+}
+
+variable "kms_key_arn" {
+  description = "ARN of the KMS key for encrypting secrets. If not provided, encryption is disabled."
+  type        = string
+  default     = ""
 } 

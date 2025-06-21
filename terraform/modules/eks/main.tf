@@ -24,11 +24,23 @@ resource "aws_iam_role_policy_attachment" "eks_cluster_policy" {
   role       = aws_iam_role.eks_cluster.name
 }
 
+# tfsec:ignore:aws-eks-no-public-cluster-access-to-cidr Until 2026-07-31 Public access is enabled for portfolio demonstration purposes.
+# tfsec:ignore:aws-eks-no-public-cluster-access Until 2026-07-31 Public access is enabled for portfolio demonstration purposes.
 # EKS Cluster
 resource "aws_eks_cluster" "main" {
   name     = "${var.project_name}-cluster"
   role_arn = aws_iam_role.eks_cluster.arn
   version  = var.kubernetes_version
+
+  dynamic "encryption_config" {
+    for_each = var.kms_key_arn != "" ? [1] : []
+    content {
+      provider {
+        key_arn = var.kms_key_arn
+      }
+      resources = ["secrets"]
+    }
+  }
 
   vpc_config {
     subnet_ids              = var.subnet_ids
@@ -82,6 +94,7 @@ resource "aws_iam_role_policy_attachment" "ec2_container_registry_read_only" {
   role       = aws_iam_role.eks_node_group.name
 }
 
+# tfsec:ignore:aws-ec2-no-public-egress-sgr Until 2026-07-31 Egress to internet is required for nodes to pull images and communicate with AWS APIs.
 # Security Group for EKS Cluster
 resource "aws_security_group" "eks_cluster" {
   name_prefix = "${var.project_name}-eks-cluster-"
